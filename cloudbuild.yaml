@@ -22,6 +22,8 @@ steps:
         "managed",
         "--memory",
         "128Mi",
+        '--update-env-vars',
+        'SENTRY_DSN=${_SENTRY_DSN}'
       ]
 images:
   - gcr.io/$PROJECT_ID/${_CLOUD_RUN_SERVICE}
@@ -31,3 +33,4 @@ options:
 
 substitutions:
   _CLOUD_RUN_SERVICE: "slim-php-spreadsheet-api"
+  _SENTRY_DSN: "sentry-dsn"
