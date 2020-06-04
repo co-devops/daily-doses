@@ -1,0 +1,25 @@
+version: "3"
+services:
+  kode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD: 'local'
+    image: jdecode/slim-php:0.1
+    ports:
+      - 17229:80
+    volumes:
+      - .:/var/www/html
+    environment:
+      SENTRY_DSN: https://39c8ac0866bc4171bdc2539819757cc0@o171093.ingest.sentry.io/5210080
+    networks:
+      testing_net:
+        ipv4_address: 172.29.1.1
+
+networks:
+  testing_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
