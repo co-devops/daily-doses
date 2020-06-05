@@ -1,10 +1,15 @@
 <?php
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ERROR);
+
+require __DIR__ . '/vendor/autoload.php';
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Factory\AppFactory;
-
-require __DIR__ . '/vendor/autoload.php';
+use Google_Client;
 
 Sentry\init(['dsn' => getenv('SENTRY_DSN') ]);
 
@@ -13,13 +18,26 @@ $app = AppFactory::create();
 $app->addRoutingMiddleware();
 
 $app->get('/', function (Request $request, Response $response, array $args) {
-    $response->getBody()->write("Hello!");
+    $response->getBody()->write("Hello! ".serialize($args).' - '.($request->getUri()));
     return $response;
 });
 
 $app->get('/hello/{name}', function (Request $request, Response $response, array $args) {
     $name = $args['name'];
-    $response->getBody()->write("Hello, $name");
+    $response->getBody()->write("Hello, $name; ". serialize($args).' - ' .($request->getUri()));
+    return $response;
+});
+
+$app->get('/events', function (Request $request, Response $response, array $args) {
+    $client = new Google_Client();
+    $client->setApplicationName('Google Sheets API PHP');
+    $client->setScopes(Google_Service_Sheets::SPREADSHEETS_READONLY);
+    $spreadsheetId = '1e2GXQAvCEeJ-iUtQzTCSI_US-6Hh1K_22rYbbokyzj0';
+    $range = 'Events!A:G';
+    $service = new Google_Service_Sheets($client);
+    $sheet_response = $service->spreadsheets_values->get($spreadsheetId, $range);
+    $values = $sheet_response->getValues();
+    $response->getBody()->write(json_encode($values));
     return $response;
 });
 
@@ -29,7 +47,10 @@ $sentry = function (
     Throwable $exception
 ) use ($app) {
     Sentry\captureException($exception);
-    $payload = ['error' => $exception->getMessage()];
+    $payload = [
+        'error' => $exception->getMessage(),
+        'uri' => $request->getUri()
+    ];
     $response = $app->getResponseFactory()->createResponse();
     $response->getBody()->write(
         json_encode($payload, JSON_UNESCAPED_UNICODE)
@@ -41,7 +62,7 @@ $sentry = function (
 };
 
 // Sentry will handle errors
-$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$errorMiddleware = $app->addErrorMiddleware(false, true, true);
 $errorMiddleware->setDefaultErrorHandler($sentry);
 
 
