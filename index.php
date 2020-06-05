@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', '0');
-ini_set('display_startup_errors', '0');
-error_reporting(E_ERROR);
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -9,7 +6,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Factory\AppFactory;
-use Google_Client;
 
 Sentry\init(['dsn' => getenv('SENTRY_DSN') ]);
 
@@ -29,9 +25,11 @@ $app->get('/hello/{name}', function (Request $request, Response $response, array
 });
 
 $app->get('/events', function (Request $request, Response $response, array $args) {
-    $client = new Google_Client();
-    $client->setApplicationName('Google Sheets API PHP');
-    $client->setScopes(Google_Service_Sheets::SPREADSHEETS_READONLY);
+    $client = new Google_Client([
+        'scopes' => [Google_Service_Sheets::SPREADSHEETS_READONLY],
+        'use_application_default_credentials' => true
+    ]);
+
     $spreadsheetId = '1e2GXQAvCEeJ-iUtQzTCSI_US-6Hh1K_22rYbbokyzj0';
     $range = 'Events!A:G';
     $service = new Google_Service_Sheets($client);
