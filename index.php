@@ -25,17 +25,20 @@ $app->get('/hello/{name}', function (Request $request, Response $response, array
 });
 
 $app->get('/events', function (Request $request, Response $response, array $args) {
-    $client = new Google_Client([
-        'scopes' => [Google_Service_Sheets::SPREADSHEETS_READONLY],
-        'use_application_default_credentials' => true
-    ]);
-
     $spreadsheetId = '1e2GXQAvCEeJ-iUtQzTCSI_US-6Hh1K_22rYbbokyzj0';
     $range = 'Events!A:G';
-    $service = new Google_Service_Sheets($client);
-    $sheet_response = $service->spreadsheets_values->get($spreadsheetId, $range);
-    $values = $sheet_response->getValues();
-    $response->getBody()->write(json_encode($values));
+    $response->getBody()->write(
+        json_encode(
+            (new Google_Service_Sheets(
+                new Google_Client([
+                'scopes' => [Google_Service_Sheets::SPREADSHEETS_READONLY],
+                'use_application_default_credentials' => true
+            ])))
+            ->spreadsheets_values
+            ->get($spreadsheetId, $range)
+            ->getValues()
+        )
+    );
     return $response;
 });
 
