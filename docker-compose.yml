@@ -1,6 +1,6 @@
 version: "3"
 services:
-  kode:
+  day2:
     build:
       context: .
       dockerfile: Dockerfile
